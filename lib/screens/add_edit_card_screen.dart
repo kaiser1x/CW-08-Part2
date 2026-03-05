@@ -229,8 +229,9 @@ class _AddEditCardScreenState extends State<AddEditCardScreen> {
                 validator: (value) {
                   if (value != null && value.isNotEmpty) {
                     if (!value.startsWith('http://') &&
-                        !value.startsWith('https://')) {
-                      return 'Please enter a valid URL';
+                        !value.startsWith('https://') &&
+                        !value.startsWith('assets/')) {
+                      return 'Please enter a valid URL or assets/ path';
                     }
                   }
                   return null;

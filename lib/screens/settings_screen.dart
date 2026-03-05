@@ -1,8 +1,4 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
-import 'package:path/path.dart';
-import 'package:sqflite/sqflite.dart' as sqflite;
 
 import '../database_helper.dart';
 import '../repositories/card_repository.dart';
@@ -27,8 +23,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
   /// Reset the database and recreate folders and cards.
   /// New folders are added based on the selected suit count.
   Future<void> _resetDatabase(int suitCount) async {
-    final BuildContext primaryContext = context as BuildContext;
-    
+    final BuildContext primaryContext = context;
+
     final confirmed = await showDialog<bool>(
       context: primaryContext,
       builder: (dialogContext) {
@@ -57,25 +53,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
     setState(() => _isResetting = true);
 
     try {
-      // Close and delete database
-      final dbHelper = DatabaseHelper.instance;
-      await dbHelper.close();
-
-      // Delete the database file
-      final dbPath = await sqflite.getDatabasesPath();
-      final path = join(dbPath, 'card_organizer.db');
-      final file = File(path);
-      if (file.existsSync()) {
-        await file.delete();
-      }
-
-      // Reinitialize database (will run onCreate)
-      await dbHelper.database;
+      // Wipe and re-seed with the requested suit count (no file delete needed)
+      await DatabaseHelper.instance.resetToSuitCount(suitCount);
 
       if (mounted) {
         ScaffoldMessenger.of(primaryContext).showSnackBar(
           SnackBar(
-            content: Text('Database reset to $suitCount suits (${ suitCount * 13} cards)'),
+            content: Text('Database reset to $suitCount suit${suitCount == 1 ? '' : 's'} (${suitCount * 13} cards)'),
           ),
         );
         Navigator.pop(primaryContext, true); // Signal success to refresh home
@@ -202,7 +186,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
                 ),
               );
-            }).toList(),
+            }),
 
             const SizedBox(height: 32),
 
@@ -260,8 +244,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   /// Show a dialog listing all app features.
   void _showFeatures() {
-    final BuildContext primaryContext = context as BuildContext;
-    
+    final BuildContext primaryContext = context;
+
     showDialog(
       context: primaryContext,
       builder: (dialogContext) {

@@ -49,6 +49,39 @@ class DatabaseHelper {
     _database = null;
   }
 
+  /// Delete all existing folders (cascades to cards) and re-seed with [suitCount]
+  /// suits (1-4). Does not delete or recreate the database file.
+  Future<void> resetToSuitCount(int suitCount) async {
+    assert(suitCount >= 1 && suitCount <= 4);
+    final db = await database;
+    final allSuits = ['Hearts', 'Diamonds', 'Clubs', 'Spades'];
+    final suits = allSuits.take(suitCount).toList();
+    final cardNames = [
+      'Ace', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'Jack', 'Queen', 'King'
+    ];
+
+    await db.transaction((txn) async {
+      // Wipe everything — CASCADE on folder delete removes cards too.
+      await txn.delete('cards');
+      await txn.delete('folders');
+
+      for (final suit in suits) {
+        final folderId = await txn.insert('folders', {
+          'folder_name': suit,
+          'timestamp': DateTime.now().toIso8601String(),
+        });
+        for (final card in cardNames) {
+          await txn.insert('cards', {
+            'card_name': card,
+            'suit': suit,
+            'image_url': _defaultImageUrl(card, suit),
+            'folder_id': folderId,
+          });
+        }
+      }
+    });
+  }
+
   /// Insert the full set of 13 cards for a single suit into a specific
   /// folder.  This can be used by repository logic when the user creates a
   /// new deck after the initial prepopulation.
