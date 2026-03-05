@@ -4,6 +4,8 @@ import '../models/folder.dart';
 import '../repositories/card_repository.dart';
 import '../repositories/folder_repository.dart';
 import 'cards_screen.dart';
+import 'settings_screen.dart';
+import 'statistics_screen.dart';
 
 /// The main screen that displays 2-4 suit folders in a grid.
 /// Each folder card shows the suit icon, name, card count, and delete button.
@@ -118,6 +120,35 @@ class _FolderScreenState extends State<FolderScreen> {
         title: const Text('Card Organizer'),
         backgroundColor: Colors.blueAccent,
         elevation: 0,
+        actions: [
+          // Statistics button
+          IconButton(
+            icon: const Icon(Icons.bar_chart),
+            tooltip: 'Statistics',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const StatisticsScreen()),
+              );
+            },
+          ),
+          // Settings button
+          IconButton(
+            icon: const Icon(Icons.settings),
+            tooltip: 'Settings',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const SettingsScreen()),
+              ).then((result) {
+                if (result == true) {
+                  // Database was reset, refresh folders
+                  _loadFolders();
+                }
+              });
+            },
+          ),
+        ],
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())

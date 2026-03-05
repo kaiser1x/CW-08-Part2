@@ -20,12 +20,21 @@ class CardsScreen extends StatefulWidget {
 class _CardsScreenState extends State<CardsScreen> {
   final CardRepository _cardRepository = CardRepository();
   List<PlayingCard> _cards = [];
+  List<PlayingCard> _filteredCards = [];
   bool _isLoading = true;
+  final TextEditingController _searchController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
     _loadCards();
+    _searchController.addListener(_filterCards);
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
   /// Load all cards for this folder from the database.
@@ -35,6 +44,7 @@ class _CardsScreenState extends State<CardsScreen> {
       final cards = await _cardRepository.getCardsByFolderId(widget.folder.id!);
       setState(() {
         _cards = cards;
+        _filteredCards = cards;
         _isLoading = false;
       });
     } catch (e) {
@@ -44,6 +54,20 @@ class _CardsScreenState extends State<CardsScreen> {
           SnackBar(content: Text('Error loading cards: $e')),
         );
       }
+    }
+  }
+
+  /// Filter cards based on search query (case-insensitive name match).
+  void _filterCards() {
+    final query = _searchController.text.toLowerCase();
+    if (query.isEmpty) {
+      setState(() => _filteredCards = _cards);
+    } else {
+      setState(() {
+        _filteredCards = _cards
+            .where((card) => card.cardName.toLowerCase().contains(query))
+            .toList();
+      });
     }
   }
 
@@ -107,31 +131,67 @@ class _CardsScreenState extends State<CardsScreen> {
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
-          : _cards.isEmpty
-              ? Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(Icons.credit_card, size: 80, color: Colors.grey),
-                      const SizedBox(height: 16),
-                      const Text('No cards found'),
-                    ],
-                  ),
-                )
-              : GridView.builder(
+          : Column(
+              children: [
+                // Search bar
+                Padding(
                   padding: const EdgeInsets.all(12),
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2,
-                    crossAxisSpacing: 12,
-                    mainAxisSpacing: 12,
-                    childAspectRatio: 0.65,
+                  child: TextField(
+                    controller: _searchController,
+                    decoration: InputDecoration(
+                      hintText: 'Search cards (e.g., Ace, King)...',
+                      prefixIcon: const Icon(Icons.search),
+                      suffixIcon: _searchController.text.isNotEmpty
+                          ? IconButton(
+                              onPressed: () {
+                                _searchController.clear();
+                              },
+                              icon: const Icon(Icons.clear),
+                            )
+                          : null,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
                   ),
-                  itemCount: _cards.length,
-                  itemBuilder: (context, index) {
-                    final card = _cards[index];
-                    return _buildCardTile(card);
-                  },
                 ),
+                // Cards grid or empty state
+                Expanded(
+                  child: _filteredCards.isEmpty
+                      ? Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Icon(Icons.credit_card,
+                                  size: 80, color: Colors.grey),
+                              const SizedBox(height: 16),
+                              Text(
+                                _searchController.text.isEmpty
+                                    ? 'No cards found'
+                                    : 'No cards match "${_searchController.text}"',
+                              ),
+                            ],
+                          ),
+                        )
+                      : GridView.builder(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 8),
+                          gridDelegate:
+                              const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 2,
+                            crossAxisSpacing: 12,
+                            mainAxisSpacing: 12,
+                            childAspectRatio: 0.65,
+                          ),
+                          itemCount: _filteredCards.length,
+                          itemBuilder: (context, index) {
+                            final card = _filteredCards[index];
+                            return _buildCardTile(card);
+                          },
+                        ),
+                ),
+              ],
+            ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _navigateToAddEditCard(),
         tooltip: 'Add new card',
