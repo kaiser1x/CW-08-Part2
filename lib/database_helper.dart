@@ -91,6 +91,8 @@ class DatabaseHelper {
         suit TEXT NOT NULL,
         image_url TEXT,
         folder_id INTEGER,
+        is_favorite INTEGER DEFAULT 0,
+        notes TEXT,
         FOREIGN KEY (folder_id) REFERENCES folders (id)
           ON DELETE CASCADE
       )

@@ -4,6 +4,8 @@ class PlayingCard {
   final String suit;
   final String? imageUrl;
   final int folderId;
+  final bool isFavorite;
+  final String? notes;
 
   PlayingCard({
     this.id,
@@ -11,6 +13,8 @@ class PlayingCard {
     required this.suit,
     this.imageUrl,
     required this.folderId,
+    this.isFavorite = false,
+    this.notes,
   });
 
   Map<String, Object?> toMap() {
@@ -20,6 +24,8 @@ class PlayingCard {
       'suit': suit,
       'image_url': imageUrl,
       'folder_id': folderId,
+      'is_favorite': isFavorite ? 1 : 0,
+      'notes': notes,
     };
   }
 
@@ -30,6 +36,8 @@ class PlayingCard {
       suit: map['suit'] as String,
       imageUrl: map['image_url'] as String?,
       folderId: map['folder_id'] as int,
+      isFavorite: (map['is_favorite'] as int? ?? 0) == 1,
+      notes: map['notes'] as String?,
     );
   }
 
@@ -39,6 +47,8 @@ class PlayingCard {
     String? suit,
     String? imageUrl,
     int? folderId,
+    bool? isFavorite,
+    String? notes,
   }) {
     return PlayingCard(
       id: id ?? this.id,
@@ -46,6 +56,8 @@ class PlayingCard {
       suit: suit ?? this.suit,
       imageUrl: imageUrl ?? this.imageUrl,
       folderId: folderId ?? this.folderId,
+      isFavorite: isFavorite ?? this.isFavorite,
+      notes: notes ?? this.notes,
     );
   }
 

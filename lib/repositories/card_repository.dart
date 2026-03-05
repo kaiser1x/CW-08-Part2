@@ -91,4 +91,50 @@ class CardRepository {
       whereArgs: [cardId],
     );
   }
-}
+
+  // Toggle favorite status of a card
+  Future<void> toggleCardFavorite(int cardId, bool isFavorite) async {
+    final db = await _dbHelper.database;
+    await db.update(
+      'cards',
+      {'is_favorite': isFavorite ? 1 : 0},
+      where: 'id = ?',
+      whereArgs: [cardId],
+    );
+  }
+
+  // Get all favorite cards in a folder
+  Future<List<PlayingCard>> getFavoriteCards(int folderId) async {
+    final db = await _dbHelper.database;
+    final List<Map<String, dynamic>> maps = await db.query(
+      'cards',
+      where: 'folder_id = ? AND is_favorite = 1',
+      whereArgs: [folderId],
+      orderBy: 'card_name ASC',
+    );
+
+    return List.generate(maps.length, (i) {
+      return PlayingCard.fromMap(maps[i]);
+    });
+  }
+
+  // Duplicate a card (creates a new copy in same folder)
+  Future<int> duplicateCard(PlayingCard card) async {
+    final newCard = card.copyWith(
+      id: null,
+      notes: card.notes != null ? '${card.notes} (copy)' : null,
+    );
+    final db = await _dbHelper.database;
+    return await db.insert('cards', newCard.toMap());
+  }
+
+  // Update card notes
+  Future<void> updateCardNotes(int cardId, String? notes) async {
+    final db = await _dbHelper.database;
+    await db.update(
+      'cards',
+      {'notes': notes},
+      where: 'id = ?',
+      whereArgs: [cardId],
+    );
+  }
