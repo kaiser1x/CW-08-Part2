@@ -52,6 +52,32 @@ class DatabaseHelper {
   /// Insert the full set of 13 cards for a single suit into a specific
   /// folder.  This can be used by repository logic when the user creates a
   /// new deck after the initial prepopulation.
+  /// Convert a card name and suit into the two‑character code used by
+  /// deckofcardsapi (e.g. "10"→"0", "Ace"→"A", suit Hearts→"H").
+  String _cardCode(String card, String suit) {
+    final valueMap = {
+      'Ace': 'A',
+      'Jack': 'J',
+      'Queen': 'Q',
+      'King': 'K',
+      '10': '0',
+    };
+    final v = valueMap[card] ?? card;
+    final suitMap = {
+      'Hearts': 'H',
+      'Diamonds': 'D',
+      'Clubs': 'C',
+      'Spades': 'S',
+    };
+    final s = suitMap[suit] ?? '';
+    return '$v$s';
+  }
+
+  String _defaultImageUrl(String card, String suit) {
+    final code = _cardCode(card, suit);
+    return 'https://deckofcardsapi.com/static/img/$code.png';
+  }
+
   Future<void> prepopulateCardsForFolder(
       {required int folderId, required String suit}) async {
     final db = await database;
@@ -65,7 +91,7 @@ class DatabaseHelper {
         batch.insert('cards', {
           'card_name': card,
           'suit': suit,
-          'image_url': 'assets/cards/${suit.toLowerCase()}_$card.png',
+          'image_url': _defaultImageUrl(card, suit),
           'folder_id': folderId,
         });
       }
@@ -136,8 +162,7 @@ class DatabaseHelper {
           batch.insert('cards', {
             'card_name': card,
             'suit': suitName,
-            'image_url':
-                'assets/cards/${suitName.toLowerCase()}_$card.png',
+            'image_url': _defaultImageUrl(card, suitName),
             'folder_id': folderId,
           });
         }

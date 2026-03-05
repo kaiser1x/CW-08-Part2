@@ -217,8 +217,8 @@ class _AddEditCardScreenState extends State<AddEditCardScreen> {
               TextFormField(
                 controller: _imageUrlController,
                 decoration: InputDecoration(
-                  labelText: 'Image URL (optional)',
-                  hintText: 'https://example.com/card.png',
+                  labelText: 'Image URL or asset path (optional)',
+                  hintText: 'https://example.com/card.png or assets/cards/AS.png',
                   prefixIcon: const Icon(Icons.image),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
@@ -267,28 +267,60 @@ class _AddEditCardScreenState extends State<AddEditCardScreen> {
                     const SizedBox(height: 8),
                     ClipRRect(
                       borderRadius: BorderRadius.circular(8),
-                      child: Image.network(
-                        _imageUrlController.text,
-                        height: 150,
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) {
-                          return Container(
+                      child: Builder(builder: (context) {
+                        String input = _imageUrlController.text.trim();
+                        if (input.isEmpty) return const SizedBox.shrink();
+                        if (!input.startsWith('http') && !input.startsWith('assets/')) {
+                          input = 'assets/cards/$input';
+                        }
+                        if (input.startsWith('http')) {
+                          return Image.network(
+                            input,
                             height: 150,
-                            color: Colors.grey[200],
-                            child: const Center(
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(Icons.broken_image,
-                                      color: Colors.grey, size: 48),
-                                  SizedBox(height: 8),
-                                  Text('Failed to load image'),
-                                ],
-                              ),
-                            ),
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) {
+                              return Container(
+                                height: 150,
+                                color: Colors.grey[200],
+                                child: const Center(
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(Icons.broken_image,
+                                          color: Colors.grey, size: 48),
+                                      SizedBox(height: 8),
+                                      Text('Failed to load image'),
+                                    ],
+                                  ),
+                                ),
+                              );
+                            },
                           );
-                        },
-                      ),
+                        } else {
+                          return Image.asset(
+                            input,
+                            height: 150,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) {
+                              return Container(
+                                height: 150,
+                                color: Colors.grey[200],
+                                child: const Center(
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(Icons.broken_image,
+                                          color: Colors.grey, size: 48),
+                                      SizedBox(height: 8),
+                                      Text('Failed to load image'),
+                                    ],
+                                  ),
+                                ),
+                              );
+                            },
+                          );
+                        }
+                      }),
                     ),
                     const SizedBox(height: 20),
                   ],
