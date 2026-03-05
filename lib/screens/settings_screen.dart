@@ -27,7 +27,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   /// Reset the database and recreate folders and cards.
   /// New folders are added based on the selected suit count.
   Future<void> _resetDatabase(int suitCount) async {
-    final primaryContext = context; // Save a reference to avoid ambiguity
+    final BuildContext primaryContext = context as BuildContext;
     
     final confirmed = await showDialog<bool>(
       context: primaryContext,
@@ -260,7 +260,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   /// Show a dialog listing all app features.
   void _showFeatures() {
-    final primaryContext = context;
+    final BuildContext primaryContext = context as BuildContext;
     
     showDialog(
       context: primaryContext,
