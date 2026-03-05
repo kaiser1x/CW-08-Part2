@@ -72,6 +72,9 @@ class _AddEditCardScreenState extends State<AddEditCardScreen> {
               ? null
               : _imageUrlController.text.trim(),
           folderId: widget.folder.id!,
+          notes: _notesController.text.trim().isEmpty
+              ? null
+              : _notesController.text.trim(),
         );
         await _cardRepository.insertCard(newCard);
         if (mounted) {
@@ -90,6 +93,9 @@ class _AddEditCardScreenState extends State<AddEditCardScreen> {
           imageUrl: _imageUrlController.text.trim().isEmpty
               ? null
               : _imageUrlController.text.trim(),
+          notes: _notesController.text.trim().isEmpty
+              ? null
+              : _notesController.text.trim(),
         );
         await _cardRepository.updateCard(updatedCard);
         if (mounted) {
@@ -229,6 +235,23 @@ class _AddEditCardScreenState extends State<AddEditCardScreen> {
                   }
                   return null;
                 },
+              ),
+              const SizedBox(height: 16),
+
+              // Notes field
+              TextFormField(
+                controller: _notesController,
+                maxLines: null,
+                maxLength: 500,
+                decoration: InputDecoration(
+                  labelText: 'Notes (optional)',
+                  hintText: 'Add personal notes about this card...',
+                  prefixIcon: const Icon(Icons.description),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  helperText: 'Personal notes - 500 characters max',
+                ),
               ),
               const SizedBox(height: 20),
 

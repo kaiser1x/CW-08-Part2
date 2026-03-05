@@ -138,3 +138,4 @@ class CardRepository {
       whereArgs: [cardId],
     );
   }
+}
