@@ -10,7 +10,7 @@ class Folder {
   });
 
   // Convert Folder object to Map for database operations
-  Map toMap() {
+  Map<String, Object?> toMap() {
     return {
       'id': id,
       'folder_name': folderName,
@@ -19,11 +19,11 @@ class Folder {
   }
 
   // Create Folder object from Map (database query result)
-  factory Folder.fromMap(Map map) {
+  factory Folder.fromMap(Map<String, dynamic> map) {
     return Folder(
-      id: map['id'],
-      folderName: map['folder_name'],
-      timestamp: map['timestamp'],
+      id: map['id'] as int?,
+      folderName: map['folder_name'] as String,
+      timestamp: map['timestamp'] as String,
     );
   }
 
