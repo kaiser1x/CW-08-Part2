@@ -4,6 +4,7 @@ import '../models/folder.dart';
 import '../repositories/card_repository.dart';
 import '../repositories/folder_repository.dart';
 import 'cards_screen.dart';
+import 'export_screen.dart';
 import 'settings_screen.dart';
 import 'statistics_screen.dart';
 
@@ -121,6 +122,17 @@ class _FolderScreenState extends State<FolderScreen> {
         backgroundColor: Colors.blueAccent,
         elevation: 0,
         actions: [
+          // Export button
+          IconButton(
+            icon: const Icon(Icons.download),
+            tooltip: 'Export deck',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const ExportScreen()),
+              );
+            },
+          ),
           // Statistics button
           IconButton(
             icon: const Icon(Icons.bar_chart),
