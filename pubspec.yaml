@@ -64,6 +64,43 @@ flutter:
   uses-material-design: true
 
   # To add assets to your application, add an assets section, like this:
+  assets:
+    - assets/cards/
+  # Place your card images under assets/cards/ (e.g. assets/cards/AS.png).
+  # If you don't have local files you can still use online URLs in the app.
+  #
+  # The API returns JSON like this when drawing cards:
+  # {
+  #   "success": true,
+  #   "deck_id": "kxozasf3edqu",
+  #   "cards": [
+  #     {
+  #       "code": "6H",
+  #       "image": "https://deckofcardsapi.com/static/img/6H.png",
+  #       "images": {
+  #         "svg": "https://deckofcardsapi.com/static/img/6H.svg",
+  #         "png": "https://deckofcardsapi.com/static/img/6H.png"
+  #       },
+  #       "value": "6",
+  #       "suit": "HEARTS"
+  #     },
+  #     {
+  #       "code": "5S",
+  #       "image": "https://deckofcardsapi.com/static/img/5S.png",
+  #       "images": {
+  #         "svg": "https://deckofcardsapi.com/static/img/5S.svg",
+  #         "png": "https://deckofcardsapi.com/static/img/5S.png"
+  #       },
+  #       "value": "5",
+  #       "suit": "SPADES"
+  #     }
+  #   ],
+  #   "remaining": 50
+  # }
+  #
+  # Use the "image" URL above as the card image if you aren't using local assets.
+
+  # Example of other assets:
   # assets:
   #   - images/a_dot_burr.jpeg
   #   - images/a_dot_ham.jpeg

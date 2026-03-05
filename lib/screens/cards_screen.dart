@@ -49,9 +49,9 @@ class _CardsScreenState extends State<CardsScreen> {
       final cards = await _cardRepository.getCardsByFolderId(widget.folder.id!);
       setState(() {
         _cards = cards;
-        _filteredCards = cards;
         _isLoading = false;
       });
+      _filterCards(); // Re-apply active filters instead of resetting to all cards
     } catch (e) {
       setState(() => _isLoading = false);
       if (mounted) {
@@ -441,29 +441,63 @@ class _CardsScreenState extends State<CardsScreen> {
                     child: Container(
                       color: Colors.grey[200],
                       child: card.imageUrl != null && card.imageUrl!.isNotEmpty
-                          ? Image.network(
-                              card.imageUrl!,
-                              fit: BoxFit.cover,
-                              errorBuilder: (context, error, stackTrace) {
-                                return Center(
-                                  child: Column(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      const Icon(Icons.image_not_supported,
-                                          color: Colors.grey),
-                                      const SizedBox(height: 4),
-                                      Text(
-                                        card.cardName,
-                                        style: const TextStyle(
-                                          fontSize: 12,
-                                          color: Colors.grey,
-                                        ),
+                          ? Builder(builder: (context) {
+                              // Normalize the path: if it doesn't look like a URL or asset,
+                              // assume it's a filename under assets/cards/.
+                              String path = card.imageUrl!.trim();
+                              if (!path.startsWith('http') && !path.startsWith('assets/')) {
+                                path = 'assets/cards/$path';
+                              }
+                              if (path.startsWith('http')) {
+                                return Image.network(
+                                  path,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (context, error, stackTrace) {
+                                    return Center(
+                                      child: Column(
+                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        children: [
+                                          const Icon(Icons.image_not_supported,
+                                              color: Colors.grey),
+                                          const SizedBox(height: 4),
+                                          Text(
+                                            card.cardName,
+                                            style: const TextStyle(
+                                              fontSize: 12,
+                                              color: Colors.grey,
+                                            ),
+                                          ),
+                                        ],
                                       ),
-                                    ],
-                                  ),
+                                    );
+                                  },
                                 );
-                              },
-                            )
+                              } else {
+                                return Image.asset(
+                                  path,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (context, error, stackTrace) {
+                                    return Center(
+                                      child: Column(
+                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        children: [
+                                          const Icon(Icons.image_not_supported,
+                                              color: Colors.grey),
+                                          const SizedBox(height: 4),
+                                          Text(
+                                            card.cardName,
+                                            style: const TextStyle(
+                                              fontSize: 12,
+                                              color: Colors.grey,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    );
+                                  },
+                                );
+                              }
+                            })
                           : Center(
                               child: Column(
                                 mainAxisAlignment: MainAxisAlignment.center,
