@@ -27,6 +27,7 @@ class _AddEditCardScreenState extends State<AddEditCardScreen> {
 
   late TextEditingController _cardNameController;
   late TextEditingController _imageUrlController;
+  late TextEditingController _notesController;
   late String _selectedSuit;
   bool _isSaving = false;
 
@@ -41,6 +42,9 @@ class _AddEditCardScreenState extends State<AddEditCardScreen> {
     _imageUrlController = TextEditingController(
       text: widget.card?.imageUrl ?? '',
     );
+    _notesController = TextEditingController(
+      text: widget.card?.notes ?? '',
+    );
     _selectedSuit = widget.card?.suit ?? widget.folder.folderName;
   }
 
@@ -48,6 +52,7 @@ class _AddEditCardScreenState extends State<AddEditCardScreen> {
   void dispose() {
     _cardNameController.dispose();
     _imageUrlController.dispose();
+    _notesController.dispose();
     super.dispose();
   }
 

@@ -26,6 +26,8 @@ class _CardsScreenState extends State<CardsScreen> {
   Set<int> _selectedCardIds = {};
   final TextEditingController _searchController = TextEditingController();
   String _sortBy = 'name'; // 'name' or 'suit'
+  String? _filterBySuit; // null = all suits
+  bool _showOnlyFavorites = false;
 
   @override
   void initState() {
@@ -60,22 +62,26 @@ class _CardsScreenState extends State<CardsScreen> {
     }
   }
 
-  /// Filter cards based on search query (case-insensitive name match).
+  /// Filter cards based on search query, suit, and favorites.
   void _filterCards() {
     final query = _searchController.text.toLowerCase();
     List<PlayingCard> filtered;
-    
-    if (query.isEmpty) {
-      filtered = _cards;
-    } else {
-      filtered = _cards
-          .where((card) => card.cardName.toLowerCase().contains(query))
-          .toList();
-    }
+
+    // Apply search, suit, and favorites filters
+    filtered = _cards.where((card) {
+      final matchesSearch = query.isEmpty ||
+          card.cardName.toLowerCase().contains(query);
+      final matchesSuit =
+          _filterBySuit == null || card.suit == _filterBySuit;
+      final matchesFavorite =
+          !_showOnlyFavorites || card.isFavorite;
+
+      return matchesSearch && matchesSuit && matchesFavorite;
+    }).toList();
 
     // Apply sorting
     _applySorting(filtered);
-    
+
     setState(() => _filteredCards = filtered);
   }
 
@@ -147,6 +153,39 @@ class _CardsScreenState extends State<CardsScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Error deleting cards: $e')),
+        );
+      }
+    }
+  }
+
+  /// Toggle favorite status of a card.
+  Future<void> _toggleCardFavorite(PlayingCard card) async {
+    try {
+      await _cardRepository.toggleCardFavorite(card.id!, !card.isFavorite);
+      await _loadCards();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error updating favorite: $e')),
+        );
+      }
+    }
+  }
+
+  /// Duplicate a card.
+  Future<void> _duplicateCard(PlayingCard card) async {
+    try {
+      await _cardRepository.duplicateCard(card);
+      await _loadCards();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('${card.cardName} duplicated')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error duplicating card: $e')),
         );
       }
     }
@@ -280,6 +319,46 @@ class _CardsScreenState extends State<CardsScreen> {
                           ],
                         ),
                       ),
+                      const SizedBox(height: 8),
+                      // Filter options
+                      SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        child: Row(
+                          children: [
+                            const Text('Filter: ', style: TextStyle(fontWeight: FontWeight.w600)),
+                            FilterChip(
+                              label: const Text('⭐ Favorites'),
+                              selected: _showOnlyFavorites,
+                              onSelected: (_) {
+                                setState(() => _showOnlyFavorites = !_showOnlyFavorites);
+                                _filterCards();
+                              },
+                            ),
+                            const SizedBox(width: 8),
+                            // Suit filters
+                            FilterChip(
+                              label: const Text('All Suits'),
+                              selected: _filterBySuit == null,
+                              onSelected: (_) {
+                                setState(() => _filterBySuit = null);
+                                _filterCards();
+                              },
+                            ),
+                            for (final suit in ['Hearts', 'Diamonds', 'Clubs', 'Spades'])
+                              Padding(
+                                padding: const EdgeInsets.only(left: 4, right: 4),
+                                child: FilterChip(
+                                  label: Text(suit),
+                                  selected: _filterBySuit == suit,
+                                  onSelected: (_) {
+                                    setState(() => _filterBySuit = suit);
+                                    _filterCards();
+                                  },
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -338,14 +417,13 @@ class _CardsScreenState extends State<CardsScreen> {
         onTap: () {
           if (_isSelectionMode) {
             _toggleCardSelection(card);
-          } else {
-            _navigateToAddEditCard(card);
+          } else if (!_isSelectionMode) {
+            // Tapping star doesn't navigate
           }
         },
         onLongPress: () {
           if (!_isSelectionMode) {
-            _toggleSelectionMode();
-            _toggleCardSelection(card);
+            _showCardContextMenu(card);
           }
         },
         borderRadius: BorderRadius.circular(12),
@@ -420,6 +498,20 @@ class _CardsScreenState extends State<CardsScreen> {
                         card.suit,
                         style: const TextStyle(fontSize: 12, color: Colors.grey),
                       ),
+                      if (card.notes != null && card.notes!.isNotEmpty)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 4),
+                          child: Text(
+                            card.notes!,
+                            style: const TextStyle(
+                              fontSize: 11,
+                              color: Colors.blueGrey,
+                              fontStyle: FontStyle.italic,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
                     ],
                   ),
                 ),
@@ -450,6 +542,19 @@ class _CardsScreenState extends State<CardsScreen> {
                   ),
               ],
             ),
+            // Favorite star icon
+            Positioned(
+              top: 8,
+              left: 8,
+              child: GestureDetector(
+                onTap: () => _toggleCardFavorite(card),
+                child: Icon(
+                  card.isFavorite ? Icons.star : Icons.star_outline,
+                  color: card.isFavorite ? Colors.amber : Colors.grey,
+                  size: 24,
+                ),
+              ),
+            ),
             // Selection checkbox overlay
             if (_isSelectionMode)
               Positioned(
@@ -473,6 +578,134 @@ class _CardsScreenState extends State<CardsScreen> {
           ],
         ),
       ),
+    );
+  }
+
+  /// Show notes dialog for a card.
+  Future<void> _showNotesDialog(PlayingCard card) async {
+    final notesController = TextEditingController(text: card.notes ?? '');
+
+    final result = await showDialog<String>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: const Text('Card Notes'),
+          content: TextField(
+            controller: notesController,
+            maxLines: null,
+            maxLength: 500,
+            decoration: const InputDecoration(
+              hintText: 'Enter notes for this card...',
+              border: OutlineInputBorder(),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, notesController.text),
+              child: const Text('Save'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (result != null) {
+      try {
+        await _cardRepository.updateCardNotes(card.id!, result.isEmpty ? null : result);
+        await _loadCards();
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Notes updated')),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Error updating notes: $e')),
+          );
+        }
+      }
+    }
+  }
+
+  /// Show context menu for card actions.
+  void _showCardContextMenu(PlayingCard card) {
+    showModalBottomSheet(
+      context: context,
+      builder: (sheetContext) {
+        return Container(
+          decoration: const BoxDecoration(
+            borderRadius: BorderRadius.only(
+              topLeft: Radius.circular(16),
+              topRight: Radius.circular(16),
+            ),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Text(
+                  card.cardName,
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              ListTile(
+                leading: const Icon(Icons.edit),
+                title: const Text('Edit'),
+                onTap: () {
+                  Navigator.pop(sheetContext);
+                  _navigateToAddEditCard(card);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.copy),
+                title: const Text('Duplicate'),
+                onTap: () {
+                  Navigator.pop(sheetContext);
+                  _duplicateCard(card);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.description),
+                title: const Text('Notes'),
+                onTap: () {
+                  Navigator.pop(sheetContext);
+                  _showNotesDialog(card);
+                },
+              ),
+              ListTile(
+                leading: Icon(
+                  card.isFavorite ? Icons.star : Icons.star_outline,
+                  color: Colors.amber,
+                ),
+                title: Text(
+                  card.isFavorite ? 'Remove from Favorites' : 'Add to Favorites',
+                ),
+                onTap: () {
+                  Navigator.pop(sheetContext);
+                  _toggleCardFavorite(card);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.delete, color: Colors.red),
+                title: const Text('Delete', style: TextStyle(color: Colors.red)),
+                onTap: () {
+                  Navigator.pop(sheetContext);
+                  _deleteCard(card);
+                },
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 }
