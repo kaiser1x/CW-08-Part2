@@ -13,7 +13,7 @@ class PlayingCard {
     required this.folderId,
   });
 
-  Map toMap() {
+  Map<String, Object?> toMap() {
     return {
       'id': id,
       'card_name': cardName,
@@ -23,13 +23,13 @@ class PlayingCard {
     };
   }
 
-  factory PlayingCard.fromMap(Map map) {
+  factory PlayingCard.fromMap(Map<String, dynamic> map) {
     return PlayingCard(
-      id: map['id'],
-      cardName: map['card_name'],
-      suit: map['suit'],
-      imageUrl: map['image_url'],
-      folderId: map['folder_id'],
+      id: map['id'] as int?,
+      cardName: map['card_name'] as String,
+      suit: map['suit'] as String,
+      imageUrl: map['image_url'] as String?,
+      folderId: map['folder_id'] as int,
     );
   }
 
